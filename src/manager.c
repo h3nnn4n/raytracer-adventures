@@ -38,7 +38,7 @@ Manager *init_manager() {
     _manager->n_samples = 10;
     _manager->n_bounces = 5;
 
-    _manager->exposure = 0.75f;
+    _manager->exposure = 1.0;
 
     return _manager;
 }
