@@ -14,6 +14,8 @@ materials.
 There are a few bugs laying around causing some visual artifacts, and some
 portions are implemented in a plain wrong way (but giving reasonable outputs).
 
+![](assets/sample.png)
+
 ## Setting up
 
 - Run `git submodules update --init --recursive` in the `deps` folder
