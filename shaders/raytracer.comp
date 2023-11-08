@@ -3,7 +3,7 @@
 layout (local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 layout (rgba32f, binding = 0) uniform image2D render_texture;
-layout (rgba32f, binding = 1) uniform image2D debug_texture;
+layout (rgba32f, binding = 1) uniform image2D normal_texture;
 layout (rgba32f, binding = 2) uniform image2D skybox_texture;
 
 layout (location = 0) uniform float time;
@@ -194,31 +194,32 @@ bool test_sphere_hit(float max_distance, vec3 ray_origin, vec3 ray_direction, in
   if (discriminant < 0.0)
     return false;
 
-  float t = (-b - sqrt(discriminant)) / a;
-  if (t >= near_plane && t <= max_distance) {
+  float t_a = (-b - sqrt(discriminant)) / a;
+  float t_b = (-b + sqrt(discriminant)) / a;
+
+  if (t_a >= near_plane && t_a <= max_distance) {
     hit_info.hit = true;
-    hit_info.position = ray_origin + ray_direction * t;
+    hit_info.position = ray_origin + ray_direction * t_a;
     hit_info.normal = normalize(hit_info.position - position.xyz);
-    hit_info.distance = t;
+    hit_info.distance = t_a;
     hit_info.id = sphere_id;
     hit_info.hit_type = HIT_SPHERE;
 
-    return true;
-  } else {
-    t = (-b + sqrt(discriminant)) / a;
-    if (t >= near_plane && t <= max_distance) {
-      hit_info.hit = true;
-      hit_info.position = ray_origin + ray_direction * t;
-      hit_info.normal = normalize(hit_info.position - position.xyz);
-      hit_info.distance = t;
-      hit_info.id = sphere_id;
-      hit_info.hit_type = HIT_SPHERE;
-
-      return true;
-    }
+    max_distance = t_a;
   }
 
-  return false;
+  if (t_b >= near_plane && t_b <= max_distance) {
+    hit_info.hit = true;
+    hit_info.position = ray_origin + ray_direction * t_b;
+    hit_info.normal = normalize(hit_info.position - position.xyz);
+    hit_info.distance = t_b;
+    hit_info.id = sphere_id;
+    hit_info.hit_type = HIT_SPHERE;
+
+    max_distance = t_b;
+  }
+
+  return hit_info.hit;
 }
 
 bool test_ground_plane_hit(float max_distance, vec3 ray_origin, vec3 ray_direction, inout hit_t hit_info) {
@@ -296,7 +297,8 @@ void main() {
   float max_y          = 5.0;
   float max_x          = max_y * aspect_ratio;
 
-  imageStore(debug_texture, pixel_position, vec4(0.0, 0.0, 0.0, 1.0));
+  // Cleanup normal texture
+  imageStore(normal_texture, pixel_position, vec4(0.0, 0.0, 0.0, 1.0));
 
   for (int i_sample = 0; i_sample < n_samples; i_sample++) {
     // Ray sample output color
@@ -328,6 +330,11 @@ void main() {
         color.rgb += reflectance.rgb * sky_color;
         reflectance.rgb *= sky_color;
         break;
+      }
+
+      if (i == 0) {
+        vec4 normal_color = vec4(hit_info.normal * 0.5 + 0.5, 1.0);
+        imageStore(normal_texture, pixel_position, normal_color);
       }
 
       if (hit_info.hit_type == HIT_GROUND) {
@@ -367,11 +374,6 @@ void main() {
         color.rgb += reflectance.rgb * emission[hit_info.id].rgb;
         reflectance.rgb *= albedo[hit_info.id].rgb * dot(-hit_info.normal, ray_direction);
         ray_direction = sample_lambert(hit_info.normal);
-
-        if (i == 0) {
-          vec4 normal_color = vec4(hit_info.normal * 0.5 + 0.5, 1.0);
-          imageStore(debug_texture, pixel_position, normal_color);
-        }
       } else if (material_type == MATERIAL_METAL) {
         // Metal
         color.rgb += reflectance.rgb * emission[hit_info.id].rgb;

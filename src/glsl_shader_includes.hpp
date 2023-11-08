@@ -1,9 +1,6 @@
-#ifndef _GLSL_SHADER_INCLUDES_H
-#define _GLSL_SHADER_INCLUDES_H
-
-//	===========
-//	Shadinclude
-//	===========
+//    ===========
+//    Shadinclude
+//    ===========
 /*
  *    LICENCE
  *    MIT License
@@ -59,16 +56,19 @@
  *    - Language	:	C++ (can easily be converted into other languages)
  **/
 
-#include <string>
+#ifndef SRC_GLSL_SHADER_INCLUDES_HPP_
+#define SRC_GLSL_SHADER_INCLUDES_HPP_
+
 #include <fstream>
 #include <iostream>
+#include <string>
 
 class Shadinclude {
   public:
     std::string load(std::string path);
 
   private:
-    void getFilePath(const std::string &fullPath, std::string &pathWithoutFileName);
+    std::string getFilePath(const std::string &fullPath);
 };
 
-#endif
+#endif // SRC_GLSL_SHADER_INCLUDES_HPP_
