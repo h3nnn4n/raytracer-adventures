@@ -327,7 +327,9 @@ void main() {
       if (!cast_ray(ray_origin, ray_direction, hit_info)) {
         float t = 0.5 * (ray_direction.y + 1.0);
         vec3 sky_color = (1.0 - t) * vec3(1.0) + t * vec3(0.5, 0.7, 1.0);
-        color.rgb += reflectance.rgb * sky_color;
+        vec3 sky_emission = vec3(0.0, 0.0, 0.0);
+
+        color.rgb += reflectance.rgb * sky_emission;
         reflectance.rgb *= sky_color;
         break;
       }
@@ -342,23 +344,23 @@ void main() {
         ray_origin = hit_info.position + hit_info.normal * 0.001;
         ray_direction = sample_lambert(hit_info.normal);
 
+        vec3 checkboard_color;
+
         // Checkboard pattern
         if (int(floor(hit_info.position.x)) % 2 == int(floor(hit_info.position.z)) % 2) {
-          vec3 col = vec3(0.8, 0.8, 0.8);
-          color.rgb += reflectance.rgb * col;
-          reflectance.rgb *= col * cosine_loss;
+          checkboard_color = vec3(0.8, 0.8, 0.8);
         } else {
-          vec3 col = vec3(0.2, 0.2, 0.2);
-          color.rgb += reflectance.rgb * col;
-          reflectance.rgb *= col * cosine_loss;
+          checkboard_color = vec3(0.2, 0.2, 0.2);
         }
+
+        color.rgb += reflectance.rgb * vec3(0.0, 0.0, 0.0);
+        reflectance.rgb *= checkboard_color * cosine_loss;
 
         continue;
       } else if (hit_info.hit_type == HIT_TRIANGLE) {
         ray_origin = hit_info.position + hit_info.normal * 0.001;
-        vec3 col = vec3(1.0, 1.0, 1.0);
-        color.rgb += reflectance.rgb * col;
-        reflectance.rgb *= col * dot(-hit_info.normal, ray_direction);
+        color.rgb += reflectance.rgb * triangle_emission[hit_info.id].rgb;
+        reflectance.rgb *= triangle_albedo[hit_info.id].rgb * dot(-hit_info.normal, ray_direction);
         ray_direction = sample_lambert(hit_info.normal);
 
         continue;
